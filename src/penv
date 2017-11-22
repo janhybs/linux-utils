@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+
+import sys, os, re
+print("cascsa")
+
+__dir__ = os.path.dirname(__file__)
+
+sys.path.append(os.path.join(__dir__, 'lib'))
+sys.path.append(os.path.join(__dir__, 'libs'))
+
+from os.path import expanduser
+from colorama import init as cinit
+from colorama import Fore, Back, Style
+cinit()
+
+
+home = expanduser("~")
+
+def pprint(value, prefix='', indent=0):
+    print(' - '*indent + prefix + str(value) + Style.RESET_ALL)
+
+
+
+envs = sys.argv[1:]
+def process_envs(envs, max_len=40, indent=0, emp=None):
+  # max_len = max([len(x) for x in os.environ.keys()])
+  fmt = '%-'+str(max_len)+'s'
+  for env in envs:
+    if env.find('*') != -1:
+        re_find = re.compile(env.replace('*', '.*'))
+        keys = [k for k in os.environ.keys() if re_find.match(k)]
+
+        pprint("%s: " % env, Fore.RED, indent=indent)
+        process_envs(keys, indent=indent + 0, emp=env.replace('*', ''))
+        print('-'*max_len)
+        print()
+        continue
+
+    env_val = os.environ.get(env, '')
+    value = env_val.split(":")
+
+    if emp:
+        emp_part = (fmt % env).replace(emp, Fore.GREEN + emp + Style.RESET_ALL + Fore.BLUE)
+        color_env = Fore.BLUE + emp_part + Style.RESET_ALL
+    else:
+        color_env = Fore.BLUE + (fmt % env) + Style.RESET_ALL
+
+
+    if env not in os.environ:
+      pprint(color_env, indent=indent)
+      pprint("  <INVALID>\n", Fore.RED, indent=indent)
+      continue
+    elif not env_val:
+      pprint(color_env, indent=indent)
+      pprint("  <EMPTY>\n", Fore.RED, indent=indent)
+      continue
+    elif env_val.find(':') == -1:
+      n = Fore.BLUE + ("%-"+str(max_len)+"s ") % env
+      p = Fore.YELLOW + env_val
+      pprint(color_env + p, indent=indent)
+      continue
+
+    pprint(color_env, indent=indent)
+    i = 1
+    for path in value:
+      n = "  %2d) " % i
+      if path.startswith(home):
+          path = Fore.YELLOW + home + path.replace(home, Fore.BLUE)
+      else:
+          path = Fore.CYAN + path
+      p = path
+      pprint(n + p, indent=indent)
+      i += 1
+    print('')
+
+process_envs(envs)

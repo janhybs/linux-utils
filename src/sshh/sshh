@@ -1,0 +1,45 @@
+#!/bin/bash
+
+
+sshhpy=$HOME/.local/share/sshh/sshh.py
+
+function print_avail () {
+    $sshhpy
+}
+
+
+
+function connect_to_server () {
+    temp_file=$(mktemp)
+    $sshhpy --connect "$1" >> $temp_file
+
+    cat $temp_file
+    echo ""
+    bash $temp_file
+    rm -rf $temp_file
+}
+
+
+if [[ $# -eq 0 ]]; then
+    print_avail
+    exit 0
+fi
+
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case $key in
+        -l|--list)
+            print_avail
+            exit 0
+        ;;
+        *)
+            SERVER="$1"
+            shift
+            shift
+            connect_to_server "$SERVER"
+
+        ;;
+    esac
+done
