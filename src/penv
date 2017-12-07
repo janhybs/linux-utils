@@ -1,76 +1,179 @@
 #!/usr/bin/env python3
 
-import sys, os, re
-print("cascsa")
+import sys, os, re, argparse
 
 __dir__ = os.path.dirname(__file__)
 
 sys.path.append(os.path.join(__dir__, 'lib'))
 sys.path.append(os.path.join(__dir__, 'libs'))
+tty = sys.stdout.isatty()
 
 from os.path import expanduser
-from colorama import init as cinit
-from colorama import Fore, Back, Style
-cinit()
-
-
 home = expanduser("~")
 
-def pprint(value, prefix='', indent=0):
-    print(' - '*indent + prefix + str(value) + Style.RESET_ALL)
+parser = argparse.ArgumentParser()
+parser.add_argument('envs', nargs='*')
+parser.add_argument('-r', '--replace', type=str)
+parser.add_argument('-d', '--delete', type=str, action='append')
+parser.add_argument('-v', '--verbose', action='store_true')
+args = parser.parse_args()
 
 
-
-envs = sys.argv[1:]
-def process_envs(envs, max_len=40, indent=0, emp=None):
-  # max_len = max([len(x) for x in os.environ.keys()])
-  fmt = '%-'+str(max_len)+'s'
-  for env in envs:
-    if env.find('*') != -1:
-        re_find = re.compile(env.replace('*', '.*'))
-        keys = [k for k in os.environ.keys() if re_find.match(k)]
-
-        pprint("%s: " % env, Fore.RED, indent=indent)
-        process_envs(keys, indent=indent + 0, emp=env.replace('*', ''))
-        print('-'*max_len)
-        print()
-        continue
-
-    env_val = os.environ.get(env, '')
-    value = env_val.split(":")
-
-    if emp:
-        emp_part = (fmt % env).replace(emp, Fore.GREEN + emp + Style.RESET_ALL + Fore.BLUE)
-        color_env = Fore.BLUE + emp_part + Style.RESET_ALL
-    else:
-        color_env = Fore.BLUE + (fmt % env) + Style.RESET_ALL
+def m(color):
+    reset = '\033[0m'
+    def o(msg=''):
+        return color + msg + reset
+    return o
 
 
-    if env not in os.environ:
-      pprint(color_env, indent=indent)
-      pprint("  <INVALID>\n", Fore.RED, indent=indent)
-      continue
-    elif not env_val:
-      pprint(color_env, indent=indent)
-      pprint("  <EMPTY>\n", Fore.RED, indent=indent)
-      continue
-    elif env_val.find(':') == -1:
-      n = Fore.BLUE + ("%-"+str(max_len)+"s ") % env
-      p = Fore.YELLOW + env_val
-      pprint(color_env + p, indent=indent)
-      continue
+class Colors(object):
+    reset = '\033[0m'
 
-    pprint(color_env, indent=indent)
-    i = 1
-    for path in value:
-      n = "  %2d) " % i
-      if path.startswith(home):
-          path = Fore.YELLOW + home + path.replace(home, Fore.BLUE)
-      else:
-          path = Fore.CYAN + path
-      p = path
-      pprint(n + p, indent=indent)
-      i += 1
-    print('')
+    class style:
+        reset = m('\033[0m')
+        bold = m('\033[01m')
+        disable = m('\033[02m')
+        underline = m('\033[04m')
+        reverse = m('\033[07m')
+        strikethrough = m('\033[09m')
+        invisible = m('\033[08m')
 
-process_envs(envs)
+    class fg:
+        black = m('\033[30m')
+        red = m('\033[31m')
+        green = m('\033[32m')
+        orange = m('\033[33m')
+        blue = m('\033[34m')
+        purple = m('\033[35m')
+        cyan = m('\033[36m')
+        lightgrey = m('\033[37m')
+        darkgrey = m('\033[90m')
+        lightred = m('\033[91m')
+        lightgreen = m('\033[92m')
+        yellow = m('\033[93m')
+        lightblue = m('\033[94m')
+        pink = m('\033[95m')
+        lightcyan = m('\033[96m')
+
+    class bg:
+        black = m('\033[40m')
+        red = m('\033[41m')
+        green = m('\033[42m')
+        orange = m('\033[43m')
+        blue = m('\033[44m')
+        purple = m('\033[45m')
+        cyan = m('\033[46m')
+        lightgrey = m('\033[47m')
+
+
+class NoColors(object):
+    class style(object):
+        def __getattr__(self, item):
+            return lambda x: x
+
+    class fg(object):
+        def __getattr__(self, item):
+            return lambda x: x
+
+    class bg(object):
+        def __getattr__(self, item):
+            return lambda x: x
+
+colors = Colors
+fg, bg, style = colors.fg, colors.bg, colors.style
+
+
+class Printer(object):
+    regex = re.compile('([a-z_]+)\.([a-z_]+)\((.*)\)')
+
+    def __init__(self):
+        self.indent = 0
+        self.indent_str = '    '
+
+    def __call__(self, prefix='', msg='', suffix='', clear=colors.reset, end='\n'):
+        indent = self.indent_str * self.indent
+        print(indent + self.prepare(prefix, msg, suffix, clear), end=end)
+
+    def prepare(self, prefix='', msg='', suffix='', clear=colors.reset):
+        return prefix + msg + suffix + clear
+
+    def __enter__(self):
+        self.indent += 1
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.indent -= 1
+        return False
+
+
+def process_envs(envs, max_len=40, emp=None):
+    # max_len = max([len(x) for x in os.environ.keys()])
+    fmt = '%-' + str(max_len) + 's'
+    for env in envs:
+        if env.find('*') != -1:
+            re_find = re.compile(env.replace('*', '.*'))
+            keys = [k for k in os.environ.keys() if re_find.match(k)]
+
+            printer(fg.red(env) + ':')
+            with printer:
+                process_envs(keys, emp=env.replace('*', ''))
+            printer('-' * max_len)
+            printer()
+            continue
+
+        env_val = os.environ.get(env, '')
+        value = env_val.split(":")
+
+        if emp:
+            bases = [fg.blue(x) for x in env.split(emp)]
+            color_env = fg.purple(emp).join(bases)
+        else:
+            color_env = fg.purple(env)
+
+        printer(color_env + ': ')
+        if env not in os.environ:
+            with printer:
+                printer(fg.red('<INVALID>'))
+            continue
+        elif not env_val:
+            with printer:
+                printer(fg.red('<EMPTY>'))
+            continue
+
+        i = 1
+        for path in value:
+            if path.startswith(home):
+                path = fg.yellow(home) + fg.blue(path.replace(home, ''))
+            elif not path:
+                path = fg.red('""')
+            else:
+                path = fg.cyan(path)
+            printer("  %2d) " % i, path)
+            i += 1
+        printer()
+
+
+def remove_paths(rules):
+    for rule in rules:
+        var = rule.split(':')[0]
+        bans = rule.split(':')[1:]
+        if var in os.environ:
+            value = os.environ[var]
+        else:
+            value=''
+
+        values = ':'.join([x for x in value.split(':') if x and x not in bans])
+        if args.verbose:
+            print('# removing values %s from variable %s' % (bans, var))
+        print('export %s=%s' % (var, values))
+        if args.verbose:
+            print()
+
+
+printer = Printer()
+
+if args.envs:
+    process_envs(args.envs)
+
+if args.delete:
+    remove_paths(args.delete)
