@@ -35,11 +35,11 @@ install:
 	-cp --no-clobber src/sshh/*.pass $(share)/sshh/
 	-cp --no-clobber src/sshh/sshh.yaml $(share)/sshh/
 	
-	@echo "\nAdd following line to you $(HOME)/.bashrc\n"
-	@echo "echo -e \"\\\nsource $(share)/sshh/sshh_completion.sh\" >> $(HOME)/.bashrc"
-	@echo "\n"
+	@/bin/echo "\nAdd following line to you $(HOME)/.bashrc\n"
+	@/bin/echo "echo -e \"\\\nsource $(share)/sshh/sshh_completion.sh\" >> $(HOME)/.bashrc"
+	@/bin/echo "\n"
 
-	@echo "\nAdd following line to you $(HOME)/.bashrc\n"
-	@echo "echo -e \"\\\nsource $(etc)/profile.d/bash_completion.sh\" >> $(HOME)/.bashrc"
-	@echo "\n"
+	@/bin/echo "\nAdd following line to you $(HOME)/.bashrc\n"
+	@/bin/echo "echo -e \"\\\nsource $(etc)/profile.d/bash_completion.sh\" >> $(HOME)/.bashrc"
+	@/bin/echo "\n"
 	
