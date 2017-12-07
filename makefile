@@ -3,11 +3,13 @@ prefix = $(HOME)/.local
 
 bin = $(prefix)/bin
 lib = $(prefix)/lib
+etc = $(prefix)/etc
 share = $(prefix)/share
 
 install:
 	@mkdir -p $(bin)
 	@mkdir -p $(lib)
+	@mkdir -p $(etc)
 	@mkdir -p $(share)/sshh
 
 	#pip3 install --user colorama
@@ -17,11 +19,16 @@ install:
 	cp 3rd-party/tree-1.7.0/tree $(bin)/tree
 	rm -rf 3rd-party/tree-1.7.0
 
+
+	rm -rf 3rd-party/bash-completion-2.1
+	tar -xvf 3rd-party/bash-completion-2.1.tar.gz -C 3rd-party
+	cd 3rd-party/bash-completion-2.1 && ./configure --prefix=$(prefix)
+	rm -rf 3rd-party/bash-completion-2.1
+
 	cp src/penv $(bin)/penv
 	@sed -i '1i#!$(shell which python3)' $(bin)/penv
 	cp src/sshh/sshh $(bin)/sshh
-	@sed -i '1i#!$(shell which python3)' $(bin)/sshh
-	
+
 	cp src/sshh/sshh.py $(share)/sshh/sshh.py
 	cp src/sshh/sshh_completion.sh $(share)/sshh/
 	
@@ -30,5 +37,9 @@ install:
 	
 	@echo "\nAdd following line to you $(HOME)/.bashrc\n"
 	@echo "echo -e \"\\\nsource $(share)/sshh/sshh_completion.sh\" >> $(HOME)/.bashrc"
+	@echo "\n"
+
+	@echo "\nAdd following line to you $(HOME)/.bashrc\n"
+	@echo "echo -e \"\\\nsource $(etc)/profile.d/bash_completion.sh\" >> $(HOME)/.bashrc"
 	@echo "\n"
 	
