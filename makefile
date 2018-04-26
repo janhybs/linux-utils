@@ -23,6 +23,8 @@ install:
 	rm -rf 3rd-party/bash-completion-2.1
 	tar -xf 3rd-party/bash-completion-2.1.tar.gz -C 3rd-party
 	cd 3rd-party/bash-completion-2.1 && ./configure --prefix=$(prefix)
+	cd 3rd-party/bash-completion-2.1 && make
+	cd 3rd-party/bash-completion-2.1 && make install
 	rm -rf 3rd-party/bash-completion-2.1
 
 	cp src/penv $(bin)/penv
@@ -31,10 +33,10 @@ install:
 
 	cp src/sshh/sshh.py $(share)/sshh/sshh.py
 	cp src/sshh/sshh_completion.sh $(share)/sshh/
-	
-	-cp --no-clobber src/sshh/*.pass $(share)/sshh/
-	-cp --no-clobber src/sshh/sshh.yaml $(share)/sshh/
-	
+
+	-cp --no-clobber -r src/sshh/*.pass $(share)/sshh/
+	-cp --no-clobber -r src/sshh/sshh.yaml $(share)/sshh/
+
 	@/bin/echo -e "\nAdd following line to you $(HOME)/.bashrc\n"
 	@/bin/echo -e "echo -e \"\\\nsource $(share)/sshh/sshh_completion.sh\" >> $(HOME)/.bashrc"
 	@/bin/echo -e "\n"
@@ -42,4 +44,3 @@ install:
 	@/bin/echo -e "\nAdd following line to you $(HOME)/.bashrc\n"
 	@/bin/echo -e "echo -e \"\\\nsource $(etc)/profile.d/bash_completion.sh\" >> $(HOME)/.bashrc"
 	@/bin/echo -e "\n"
-	

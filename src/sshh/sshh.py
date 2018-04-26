@@ -97,7 +97,7 @@ for y in yamls:
         config = yaml.load(open(y, 'r').read())
         connections = [Connection(**c) for c in config]
         cfg_dir = os.path.dirname(y)
-        
+
         break
 if not connections:
     print('Error: no connections found: \n', yamls)
@@ -163,7 +163,7 @@ if args.connect is not None:
 
         command += ['%s@%s' % (connection.user, connection.server)]
         if connection.workdir:
-            command += ['"cd %s ; bash"' % connection.workdir]
+            command += ['"cd %s ; bash -l"' % connection.workdir]
 
         if connection.password:
             command = ['sshpass', '-f', os.path.join(cfg_dir, connection.password)] + command
